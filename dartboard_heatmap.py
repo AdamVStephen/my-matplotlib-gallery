@@ -2,6 +2,8 @@
 """
 Created on Sun Oct 22 10:41:24 2023
 
+# TODO: Add support for image/logo display over text in dartboard/heatmap
+
 @author: astephen
 """
 
@@ -30,6 +32,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import pdb
 
 @dataclass
@@ -225,8 +228,11 @@ class DartboardHeatmap():
                            , horizontalalignment = 'center')
         
         # the proportions radius of inners and outer circle
-        rad = np.linspace(0, 10.5, self.n_r)
-        azm = np.linspace(0, 2 * np.pi, self.n_theta)
+        self.rad = rad = np.linspace(0, 10.5, self.n_r)
+#        self.azm = azm = np.linspace(0, 2 * np.pi, self.n_theta+1)
+        self.azm = azm = np.linspace(np.radians(self.azm_offset_degrees), 
+                                     np.radians(self.azm_offset_degrees+360), 
+                                     self.n_theta+1)
         
         #self.axi.set_rgrids([0.1, 1.8])
             
@@ -248,8 +254,9 @@ class DartboardHeatmap():
             # We will print three versionsof the label
             # In blue, the original position, rotated
             x_dtheta = x + np.radians(-1*self.azm_offset_degrees)
-            lab_dtheta = self.axi.text(x_dtheta,y, label.get_text(), transform=label.get_transform(),
-                                 ha=label.get_ha(), va=label.get_va(), color="red", fontsize='x-large')
+            y_dr = -0.025   
+            lab_dtheta = self.axi.text(x_dtheta, y_dr, label.get_text(), transform=label.get_transform(),
+                                 ha=label.get_ha(), va=label.get_va(), color="black", fontsize='x-large')
             
             #lab_dtheta.set_rotation(angle)
             
@@ -258,7 +265,7 @@ class DartboardHeatmap():
         #self.axi.set_xticklabels([])
         
             
-    def annotate(self, x, y, text, color = "black",org = None):
+    def annotate(self, x, y, text, color = "black",org = None, transform=False):
         self.axi.set_xticklabels([])
         org_colours = {
             "com" : "blue",
@@ -274,28 +281,71 @@ class DartboardHeatmap():
         else:
             color = "black"
             
-        self.axi.text(x,y,text, 
-                      color=color, 
-                      fontsize='xx-large', 
-                      multialignment="center")
+        if not transform:
+            self.axi.text(x,y,text, 
+                          color=color, 
+                          fontsize='xx-large', 
+                          multialignment="center")
+        else:
+            self.axi.text(x,y,text, 
+                          color=color, 
+                          fontsize='xx-large', 
+                          multialignment="center",
+                          transform=plt.gcf().transFigure)
         
-    def light_up_the_trebles(self):
-        pass
+            
+    def add_logo(self, x, y, image_file):
+        img=mpimg.imread(image_file)
+        img_plot = plt.imshow(img)
+        
+    def add_legend(self):
+        self.axi.legend()
+
+    def create_z_fields(self, scores = None):
+        """
+        Create an array of arrays sized to allow a colour map
+        mesh plot over the polar plot.
+        """
+        z_fields = np.zeros((self.n_r - 1, self.n_theta -1), int)
+        z_fields[2,0] = 20
+        return z_fields
+        
+    def light_up_the_trebles(self, z_fields = None):
+        radius, theta = np.meshgrid(self.rad, self.azm)
+        z_values = np.zeros((self.n_theta, self.n_r-1),int)
+        
+        
+        z_values[0,5:15] = 7
+        z_values[2,12:13] = 15
+        z_values[3,0] = 20
+        z_values[5,0:9] = 10.
+        
+        #pdb.set_trace()
+        plt.pcolormesh(theta, radius, z_values, cmap='twilight')
+        plt.colorbar(label="throws"
+                   , orientation="vertical"
+                   , fraction=0.046
+                   , pad=0.2)
+
         
     def plot(self):    
+        #self.light_up_the_trebles()
+        #self.add_logo(0,0,"tokenergy.png")
         plt.show()
         
             
 if __name__ == '__main__':
     #pp = PolarPlotter(trace = True, translate_xticks_degrees=22.5)
     #pp.plot()
-    dh = DartboardHeatmap()
-    dh.setup()
-    dh.plot()
+    if False:
+        dh = DartboardHeatmap()
+        dh.setup()
+        dh.plot()
     # Dartboard that runs from 1 to 10
-    ten_dh = DartboardHeatmap(labels=[1,2,3,4,5,6,7,8,9,10])
-    ten_dh.setup()
-    ten_dh.plot()
+    if False:
+        ten_dh = DartboardHeatmap(labels=[1,2,3,4,5,6,7,8,9,10])
+        ten_dh.setup()
+        ten_dh.plot()
     # Dartboard Diagram for Computing Division
     cd_dh = DartboardHeatmap(labels=["STEP", "RACE", "SPO", "Innovation", "BD", "OAS"])
     cd_dh.setup()
@@ -307,7 +357,8 @@ if __name__ == '__main__':
     
     cd_dh.annotate(0.3, 8.5, "CyberSecurity\nNetworks", org="proj")
     cd_dh.annotate(0.3, 6.5, "PCS Architecture\nDiagnostics")
-    cd_dh.annotate(0.3, 3.5, "CosyLab", org="com")
+    cd_dh.annotate(0.3, 4.5, "CosyLab", org="com")
+    cd_dh.annotate(0.39, 2.8, "AI/ML\nData", org="acu")
     
     cd_dh.annotate(0.85, 8.5, "RTstudio")
     
@@ -318,14 +369,39 @@ if __name__ == '__main__':
     cd_dh.annotate(2.1, 9, "ITER\nPFPO1")
     cd_dh.annotate(2.0, 4.5, "IPP", org="lab")
     
-    cd_dh.annotate(3.1, 9, "NIMBUS")
-    cd_dh.annotate(2.8, 4.0, "UPM", org="edu")
+    cd_dh.annotate(2.7, 9, "NIMBUS")
+    cd_dh.annotate(2.7, 4.0, "UPM", org="edu")
     cd_dh.annotate(2.8, 5.0, "Tok.Energy", org="com")
     
-    cd_dh.annotate(4., 7, "CFS + GF\nConsultancy", org="com")
+    cd_dh.annotate(3.3, 8.5, "HotRIO")
+    cd_dh.annotate(3.2, 3.7, "F4E", org="lab")
     
+    cd_dh.annotate(4.0, 4., "CFS", org="com")
+    cd_dh.annotate(4.3, 3.2, "General\nFusion", org="com")
+    cd_dh.annotate(4., 6.5, "Controls\nConsultancy", org="proj")
+
     cd_dh.annotate(5.5, 6.5, "Fusionics\nSkills")
     cd_dh.annotate(5.5, 3.0, "Sygensys", org="com")
     
+    # Self generated Legend
+    
+    zpos = 0.85
+    dz = 0.025
+    cd_dh.annotate(0.9,zpos, "Projects", org = "proj", transform=True)
+    zpos -=dz
+    cd_dh.annotate(0.9,zpos, "Divisions", org="comp", transform=True)
+    zpos -=dz
+    cd_dh.annotate(0.9,zpos, "(with+for)", org="comp", transform=True)
+    zpos -=dz
+    cd_dh.annotate(0.9,zpos, "Industry", org="com", transform=True)
+    zpos -=dz
+    cd_dh.annotate(0.9,zpos, "Labs", org="lab", transform=True)
+    zpos -=dz
+    cd_dh.annotate(0.9,zpos, "University", org="edu", transform=True)
+    zpos -=dz
+    cd_dh.annotate(0.9,zpos, "CD Units", org="acu", transform=True)
+    
+    #cd_dh.axi.title= "Test"
     cd_dh.plot()
+    
     
