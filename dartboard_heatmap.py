@@ -231,7 +231,7 @@ class DartboardHeatmap():
         #self.axi.set_rgrids([0.1, 1.8])
             
         # radius, r fields outer and inner bullseye
-        self.axi.set_rticks([0.3, 0.8, 5.5, 6, 10.0,10.5])
+        self.axi.set_rticks([1.8, 5.5, 6, 10.0,10.5])
         self.axi.set_theta_zero_location("N",offset=0.0)
         self.axi.set_yticklabels([])
         
@@ -249,7 +249,7 @@ class DartboardHeatmap():
             # In blue, the original position, rotated
             x_dtheta = x + np.radians(-1*self.azm_offset_degrees)
             lab_dtheta = self.axi.text(x_dtheta,y, label.get_text(), transform=label.get_transform(),
-                                 ha=label.get_ha(), va=label.get_va(), color="red")
+                                 ha=label.get_ha(), va=label.get_va(), color="red", fontsize='x-large')
             
             #lab_dtheta.set_rotation(angle)
             
@@ -258,9 +258,29 @@ class DartboardHeatmap():
         #self.axi.set_xticklabels([])
         
             
-    def annotate(self, x, y, text):
+    def annotate(self, x, y, text, color = "black",org = None):
         self.axi.set_xticklabels([])
-        self.axi.text(x,y,text, color="black", fontsize='xx-large', multialignment="center")
+        org_colours = {
+            "com" : "blue",
+            "edu" : "orange",
+            "lab": "green", 
+            "proj" : "purple",
+            "acu" : "red"
+            }
+        if org in org_colours : 
+            color = org_colours[org]
+        elif org == None:
+            color= "purple"
+        else:
+            color = "black"
+            
+        self.axi.text(x,y,text, 
+                      color=color, 
+                      fontsize='xx-large', 
+                      multialignment="center")
+        
+    def light_up_the_trebles(self):
+        pass
         
     def plot(self):    
         plt.show()
@@ -277,11 +297,35 @@ if __name__ == '__main__':
     ten_dh.setup()
     ten_dh.plot()
     # Dartboard Diagram for Computing Division
-    cd_dh = DartboardHeatmap(labels=["RACE", "SPO", "Innovation", "BD", "OAS"])
+    cd_dh = DartboardHeatmap(labels=["STEP", "RACE", "SPO", "Innovation", "BD", "OAS"])
     cd_dh.setup()
     for th in range(0, 10,2):
         for rr in range(0,10,2):
-            
-            cd_dh.annotate(np.pi*2*th/10, rr, "(%.1f,%.1f)" % (th, rr))
+            #cd_dh.annotate(np.pi*2*th/10, rr, "(%.1f,%.1f)" % (th, rr))
+            pass
+    cd_dh.annotate(1.7, 1.0, "Adv\nControl", org = "acu")
+    
+    cd_dh.annotate(0.3, 8.5, "CyberSecurity\nNetworks", org="proj")
+    cd_dh.annotate(0.3, 6.5, "PCS Architecture\nDiagnostics")
+    cd_dh.annotate(0.3, 3.5, "CosyLab", org="com")
+    
+    cd_dh.annotate(0.85, 8.5, "RTstudio")
+    
+    cd_dh.annotate(1.2, 8.5, "JET\nRTCC2\nPCS")
+    cd_dh.annotate(1.1,4.5, "digiLab", org="com")
+   
+    cd_dh.annotate(1.8, 9.5, "MAST-U\nPCS")
+    cd_dh.annotate(2.1, 9, "ITER\nPFPO1")
+    cd_dh.annotate(2.0, 4.5, "IPP", org="lab")
+    
+    cd_dh.annotate(3.1, 9, "NIMBUS")
+    cd_dh.annotate(2.8, 4.0, "UPM", org="edu")
+    cd_dh.annotate(2.8, 5.0, "Tok.Energy", org="com")
+    
+    cd_dh.annotate(4., 7, "CFS + GF\nConsultancy", org="com")
+    
+    cd_dh.annotate(5.5, 6.5, "Fusionics\nSkills")
+    cd_dh.annotate(5.5, 3.0, "Sygensys", org="com")
+    
     cd_dh.plot()
     
