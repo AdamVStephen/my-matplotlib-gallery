@@ -154,7 +154,7 @@ class PolarPlotter():
     
         
 # Python type hinting was a WIP for a while, which is a pain.
-# TODO: Refactor when I figure what list of strings is supported in which python  
+# TODO: Refactor when I nure what list of strings is supported in which python  
 # @dataclass
 class DartboardHeatmap():
     """
@@ -207,13 +207,19 @@ class DartboardHeatmap():
         """
         self.n_r = 21
         self.n_theta = len(self.labels)
+        self.azm_delta = int(360/self.n_theta)
+        self.azm_offset_degrees = int(self.azm_delta/2)
+        self.draw()
         return None
         
-    def plot(self):
-        fig, axi = plt.subplots(subplot_kw={'projection': 'polar'})
-        fig.set_size_inches((10,10))
+    def draw(self):
+        self.fig, self.axi = plt.subplots(subplot_kw={'projection': 'polar'})
+        self.fig.set_size_inches((10,10))
         # the 5,20,1 etc. field grids
-        axi.set_thetagrids(list(range(9,369,18))
+        self.axi.set_thetagrids(list(range(
+                    self.azm_offset_degrees, 
+                    360 + self.azm_offset_degrees,
+                    self.azm_delta))
                            , self.labels
                            , verticalalignment='center'
                            , horizontalalignment = 'center')
@@ -222,34 +228,43 @@ class DartboardHeatmap():
         rad = np.linspace(0, 10.5, self.n_r)
         azm = np.linspace(0, 2 * np.pi, self.n_theta)
         
-        #axi.set_rgrids([0.1, 1.8])
+        #self.axi.set_rgrids([0.1, 1.8])
             
         # radius, r fields outer and inner bullseye
-        axi.set_rticks([0.3, 0.8, 5.5, 6, 10.0,10.5])
-        axi.set_theta_zero_location("N",offset=0.0)
-        axi.set_yticklabels([])
+        self.axi.set_rticks([0.3, 0.8, 5.5, 6, 10.0,10.5])
+        self.axi.set_theta_zero_location("N",offset=0.0)
+        self.axi.set_yticklabels([])
         
         # Redrawing all of the theta labels, with translated text.
-        angles = np.linspace(0,2*np.pi,len(axi.get_xticklabels())+1)
+        angles = np.linspace(0,2*np.pi,len(self.axi.get_xticklabels())+1)
         angles[np.cos(angles) < 0] = angles[np.cos(angles) < 0] + np.pi
         angles = np.rad2deg(angles)
         labels = []
-        for label, angle in zip(axi.get_xticklabels(), angles):
+        for label, angle in zip(self.axi.get_xticklabels(), angles):
             x,y = label.get_position()
             # By virtue of the projection, 
             # x is angle in radians
             # y is incomprehensibly zero
             # We will print three versionsof the label
             # In blue, the original position, rotated
-            x_dtheta = x + np.radians(-9)
-            lab_dtheta = axi.text(x_dtheta,y, label.get_text(), transform=label.get_transform(),
+            x_dtheta = x + np.radians(-1*self.azm_offset_degrees)
+            lab_dtheta = self.axi.text(x_dtheta,y, label.get_text(), transform=label.get_transform(),
                                  ha=label.get_ha(), va=label.get_va(), color="red")
             
             #lab_dtheta.set_rotation(angle)
             
             labels.append(lab_dtheta)
-        axi.set_xticklabels([])
+            #pdb.set_trace()
+        #self.axi.set_xticklabels([])
+        
+            
+    def annotate(self, x, y, text):
+        self.axi.set_xticklabels([])
+        self.axi.text(x,y,text, color="black", fontsize='xx-large', multialignment="center")
+        
+    def plot(self):    
         plt.show()
+        
             
 if __name__ == '__main__':
     #pp = PolarPlotter(trace = True, translate_xticks_degrees=22.5)
@@ -257,3 +272,16 @@ if __name__ == '__main__':
     dh = DartboardHeatmap()
     dh.setup()
     dh.plot()
+    # Dartboard that runs from 1 to 10
+    ten_dh = DartboardHeatmap(labels=[1,2,3,4,5,6,7,8,9,10])
+    ten_dh.setup()
+    ten_dh.plot()
+    # Dartboard Diagram for Computing Division
+    cd_dh = DartboardHeatmap(labels=["RACE", "SPO", "Innovation", "BD", "OAS"])
+    cd_dh.setup()
+    for th in range(0, 10,2):
+        for rr in range(0,10,2):
+            
+            cd_dh.annotate(np.pi*2*th/10, rr, "(%.1f,%.1f)" % (th, rr))
+    cd_dh.plot()
+    
