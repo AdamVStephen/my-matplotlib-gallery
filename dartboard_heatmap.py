@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Sun Oct 22 10:41:24 2023
 
-# Ref https://stackoverflow.com/questions/46719340/how-to-rotate-tick-labels-in-polar-matplotlib-plot
-# Kudos to ImportanceOfBeingErnest
-# Comments added for gallery/pedagogical purpose
-# Minor variations on the original theme added.
+@author: astephen
+"""
+
+# -*- coding: utf-8 -*-
+
+
+# Ref https://medium.com/@symon.kopec/smart-way-to-create-dartboard-heat-map-plot-in-python-using-matplotlib-c6c1fb2b3cb1#:~:text=A%20Smart%20Way%20to%20Create%20Dartboard%20Heatmap%20Plots%20in%20Python%20Using%20Matplotlib,-SymKo&text=One%20of%20the%20easiest,illustrative%20statistics%20from%20dart%20throws.
+# Kudos to Symon Kopec
+#
+# Derivative work using a similar technique, but with some improvements
+# and some significant differences.
 #
 # Adam Vercingetorix Stephen 2023-10-22
-
-# TODO: for fun, animations with the red and black labels rotating on the spot
-# spinning around the outside (two counter rotating sets)
-# running out and back...
-# then animating within the plane while the plane itself flips and rotates
 
 
 import sys
@@ -147,7 +151,109 @@ class PolarPlotter():
         ax.set_xticklabels([])
         
         plt.show()
+    
         
+# Python type hinting was a WIP for a while, which is a pain.
+# TODO: Refactor when I figure what list of strings is supported in which python  
+# @dataclass
+class DartboardHeatmap():
+    """
+    Encapsulate variations on a theme of the original.
+        
+    Draws a dartboard of azimuthal sectors labelled by labels
+    array of strings.   
+    
+    Initializer created automatically via @dataclass decorator
+    
+    Arguments are logically flexible such that 
+        if azm_labels is provided, n_azm is calculated
+    
+    Usage : 
+        dh = DartboardHeatmap(args as per decorations below)
+        dh.setup()
+        dh.plot()
+   """
+
+    # Python type hinting was a WIP for a while, which is a pain
+    # labels: list[str] = [ 20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10, 6, 13, 4, 18, 1]
+    def __init__(self, labels=[], title = ""):
+        if len(labels) == 0:
+            self.labels = [ 20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10, 6, 13, 4, 18, 1]
+            self.title = "Dartboard"
+        else:
+            self.labels = labels
+            self.title = title
+  
+    def print(self, msg):
+        """
+        Yet another self invented debug/print mechanism.
+        """
+        if self.verbose: print(msg)
+        
+    def set_trace(self):
+        """
+        Leave the option to drop into pdb scattered around but harmless.
+        """
+        if self.trace: pdb.set_trace()
+        
+    def setup(self):
+        """
+        Geometrical calculations
+    
+        Returns
+        -------
+        None.
+
+        """
+        self.n_r = 21
+        self.n_theta = len(self.labels)
+        return None
+        
+    def plot(self):
+        fig, axi = plt.subplots(subplot_kw={'projection': 'polar'})
+        fig.set_size_inches((10,10))
+        # the 5,20,1 etc. field grids
+        axi.set_thetagrids(list(range(9,369,18))
+                           , self.labels
+                           , verticalalignment='center'
+                           , horizontalalignment = 'center')
+        
+        # the proportions radius of inners and outer circle
+        rad = np.linspace(0, 10.5, self.n_r)
+        azm = np.linspace(0, 2 * np.pi, self.n_theta)
+        
+        #axi.set_rgrids([0.1, 1.8])
+            
+        # radius, r fields outer and inner bullseye
+        axi.set_rticks([0.3, 0.8, 5.5, 6, 10.0,10.5])
+        axi.set_theta_zero_location("N",offset=0.0)
+        axi.set_yticklabels([])
+        
+        # Redrawing all of the theta labels, with translated text.
+        angles = np.linspace(0,2*np.pi,len(axi.get_xticklabels())+1)
+        angles[np.cos(angles) < 0] = angles[np.cos(angles) < 0] + np.pi
+        angles = np.rad2deg(angles)
+        labels = []
+        for label, angle in zip(axi.get_xticklabels(), angles):
+            x,y = label.get_position()
+            # By virtue of the projection, 
+            # x is angle in radians
+            # y is incomprehensibly zero
+            # We will print three versionsof the label
+            # In blue, the original position, rotated
+            x_dtheta = x + np.radians(-9)
+            lab_dtheta = axi.text(x_dtheta,y, label.get_text(), transform=label.get_transform(),
+                                 ha=label.get_ha(), va=label.get_va(), color="red")
+            
+            #lab_dtheta.set_rotation(angle)
+            
+            labels.append(lab_dtheta)
+        axi.set_xticklabels([])
+        plt.show()
+            
 if __name__ == '__main__':
-    pp = PolarPlotter(trace = True, translate_xticks_degrees=22.5)
-    pp.plot()
+    #pp = PolarPlotter(trace = True, translate_xticks_degrees=22.5)
+    #pp.plot()
+    dh = DartboardHeatmap()
+    dh.setup()
+    dh.plot()
